@@ -153,21 +153,18 @@
 
 ;; pure racket: 100,000 = 516ms, 578ms if declarations included
 ;; interp:      18,000  = 531ms using stack
-;;              100,000 = 1000 using micro-optimised code 
+;;              100,000 = <1000ms using micro-optimised code 
 
-(time
- (interp
-  '((mov (reg 3) (int 100000)) ;; 0x0
-    (mov (reg 4) (int 0)) ;; 0x1
-    (mov (reg 1) (int 1)) ;; 0x2
-    (jmp (int 4))  ;; 0x3
-
-    ;; fibonacci function
-    (cmp (reg 3) (int 1))      ;; 0x5
-    (jne (int 7))                        ;; 0x6
-    (stop)                                  ;; 0x7
-    (dec (reg 3))              ;; 0x8
-    (mov (reg 2) (reg 1))      ;; 0x9
-    (iadd (reg 1) (reg 4)) ;; 0xA
-    (mov (reg 4) (reg 2))      ;; 0xB
-    (jmp (int 4)))))                     ;; 0xC
+(void
+ (time
+  (interp
+   '((mov (reg 3) (int 100000)) ;; 0x0
+     (mov (reg 2) (int 0))      ;; 0x1
+     (mov (reg 1) (int 1))      ;; 0x2
+     (cmp (reg 3) (int 1))      ;; 0x3
+     (je (int 10))              ;; 0x4
+     (dec (reg 3))              ;; 0x5
+     (mov (reg 4) (reg 1))      ;; 0x6
+     (iadd (reg 1) (reg 2))     ;; 0x7
+     (mov (reg 2) (reg 4))      ;; 0x8
+     (jmp (int 3))))))          ;; 0x9
