@@ -1,15 +1,14 @@
 #lang racket
 
+(require "allocater.rkt" "stack-tools.rkt")
+
 ; 2048 "word sizes". So 16 kilobytes of memory on a real machine.
 (define mem-size 2048)
 
 ;                             top-of-stack reg
 (define default-registers (vector mem-size 0 0 0 0 0 0 0 0))
 
-(define (alloc mem size)
-  (println "Hi!"))
-
-(define ffi-fns (vector alloc))
+(define ffi-fns (vector alloc free))
 
 (define (interp opcodes)
   (interpret (list->vector opcodes) 0 (void) default-registers (make-vector mem-size)))
@@ -39,31 +38,6 @@
     [(list 'reg n)                         (vector-set! (car mem) n value)]
     [(list 'int n)                         (error (~a "Cannot set integer in: " op "; did you mean " (list 'deref n) "?\n"))]
     [(cons 'deref n)                       (vector-set! (cdr mem) (calculate-addr op mem) value)]))
-
-(define (push value mem)
-  (match mem
-    [(cons registers memory)
-     (let ([loc (sub1 (vector-ref registers 0))])
-       (if (loc . < . 0)
-           (error "Stack overflow.")
-           (void))
-       (vector-set! registers 0 loc)
-       (vector-set! memory loc value))]))
-
-(define (pop mem)
-  (match mem
-    [(cons registers memory)
-     (let ([loc (vector-ref registers 0)])
-       (vector-set! registers 0 (add1 loc))
-       (vector-ref memory loc))]))
-
-(define (pop-n n mem)
-  (if (n . = . 0)
-      '()
-      (let ([popped (pop mem)]) ;; force evaluation order of pops
-        (cons
-         popped
-         (pop-n (sub1 n) mem)))))
 
 (define (cmp num1 num2)
   (cond
@@ -155,16 +129,15 @@
 ;; interp:      18,000  = 531ms using stack
 ;;              100,000 = <1000ms using micro-optimised code 
 
-(void
+((λ (x) x)
  (time
   (interp
    '((mov (reg 3) (int 100000)) ;; 0x0
-     (mov (reg 2) (int 0))      ;; 0x1
-     (mov (reg 1) (int 1))      ;; 0x2
-     (cmp (reg 3) (int 1))      ;; 0x3
-     (je (int 10))              ;; 0x4
-     (dec (reg 3))              ;; 0x5
-     (mov (reg 4) (reg 1))      ;; 0x6
-     (iadd (reg 1) (reg 2))     ;; 0x7
-     (mov (reg 2) (reg 4))      ;; 0x8
-     (jmp (int 3))))))          ;; 0x9
+     (mov (reg 1) (int 1))      ;; 0x1
+     (cmp (reg 3) (int 1))      ;; 0x2
+     (je (int 9))               ;; 0x3
+     (dec (reg 3))              ;; 0x4
+     (mov (reg 4) (reg 1))      ;; 0x5
+     (iadd (reg 1) (reg 2))     ;; 0x6
+     (mov (reg 2) (reg 4))      ;; 0x7
+     (jmp (int 2))))))          ;; 0x8
