@@ -11,8 +11,8 @@
   (if (void? used-words)
       (set! used-words (make-vector (vector-length (cdr mem)) #f))
       (void))
-  ;(push
-  (allocate (cdr mem) size));mem)
+  (push
+  (allocate (cdr mem) size) mem))
 
 (define (allocate memory size [index 0] [seq 0])
   (if (index . = . (vector-length used-words))

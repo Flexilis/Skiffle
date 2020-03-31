@@ -2,6 +2,8 @@
 
 (require "allocater.rkt" "stack-tools.rkt")
 
+(provide interp)
+
 ; 2048 "word sizes". So 16 kilobytes of memory on a real machine.
 (define mem-size 2048)
 
@@ -19,6 +21,9 @@
      (match expr
        [(list expr1 ... '+ expr2 ...)
         (+ (calculate-addr (cons 'deref expr1) mem)
+           (calculate-addr (cons 'deref expr2) mem))]
+       [(list expr1 ... '- expr2 ...)
+        (- (calculate-addr (cons 'deref expr1) mem)
            (calculate-addr (cons 'deref expr2) mem))]
        [(list expr1 '* (or 2 4 8))
         (* (calculate-addr (cons 'deref expr1) mem)
@@ -51,12 +56,24 @@
       (begin
         (print-stack (add1 end) mem)
         (display (~a " " (vector-ref mem end))))))
+(define MAX-ITERS 50)
 
 (define (interpret opcodes ip last-cmp registers memory)
+  (if (MAX-ITERS . = . 0)
+     (error "Too many iterations.")
+      (set! MAX-ITERS (sub1 MAX-ITERS)))
   (let ([mem (cons registers memory)])
-    (if (ip . >= . (vector-length opcodes)) registers
+    (if (ip . >= . (vector-length opcodes))
         (begin
-          ;;(println (vector-ref opcodes ip))
+          (print-stack (vector-ref registers 0) memory)
+          registers)
+        (begin
+          (print-stack (vector-ref registers 0) memory)
+          (displayln "")
+          (println registers)
+          (println (~a "loc0: " (vector-ref memory 0)))
+          (println (~a "loc1: " (vector-ref memory 1)))
+          (println (vector-ref opcodes ip))
           (set! ip (add1 ip))
           (match (vector-ref opcodes (sub1 ip))
             [(list 'debug)
@@ -97,10 +114,20 @@
                        (+ (get-addr op1 mem)
                           (get-addr op2 mem))
                        mem)]
+            [(list 'add op1 op2 op3)
+             (set-addr op1
+                       (+ (get-addr op2 mem)
+                          (get-addr op3 mem))
+                       mem)]
+            [(list 'isub op1 op2)
+             (set-addr op1
+                       (- (get-addr op1 mem)
+                          (get-addr op2 mem))
+                       mem)]
             [(list 'ret)
              (set! ip (pop mem))]
             [(list 'call op)
-             (push (add1 ip) mem)
+             (push ip mem)
              (set!  ip (get-addr op mem))]
             [(list 'ffi n arg-cnt)
              (apply (vector-ref ffi-fns n) (cons mem (pop-n arg-cnt mem)))])
@@ -129,15 +156,65 @@
 ;; interp:      18,000  = 531ms using stack
 ;;              100,000 = <1000ms using micro-optimised code 
 
+;; call :MAKE-FN
+;; push %OLDFRAME
+;; push $10
+;; call [%RES]
+;; END:
+;; iadd %STACK $1
+;; mov %FRAME %OLDFRAME
+;; pop %OLDFRAME
+;; stop
+
+;; MAKE-FN:
+;;   push $2
+;;   ffi alloc 1
+;;   mov %RES [%STACK]
+;;   mov [%RES + 1] [%FRAME + 1]
+;;   mov [%RES] :FN
+;;   ret
+
+;; FN:
+;;   mov %OLDFRAME %FRAME
+;;   mov %FRAME %STACK
+;;   push [%RES - 1]
+;;   push [%FRAME + 1]
+;;   push [%RES - 1]
+;;   iadd [%FRAME + 1] [%RES - 1]
+;;   iadd %STACK $1
+;;   mov %RES [%STACK]
+;;   iadd %STACK $1
+;;   ret
+
 ((λ (x) x)
  (time
   (interp
-   '((mov (reg 3) (int 100000)) ;; 0x0
-     (mov (reg 1) (int 1))      ;; 0x1
-     (cmp (reg 3) (int 1))      ;; 0x2
-     (je (int 9))               ;; 0x3
-     (dec (reg 3))              ;; 0x4
-     (mov (reg 4) (reg 1))      ;; 0x5
-     (iadd (reg 1) (reg 2))     ;; 0x6
-     (mov (reg 2) (reg 4))      ;; 0x7
-     (jmp (int 2))))))          ;; 0x8
+   '((lea (reg 1)  [deref (reg 0) - 2]) ;; 0
+     (push (int 2))
+     (call (int 10)) ;; 1
+     (push (reg 2)) ;; 2
+     (push (int 10)) ;; 3
+     (call (deref (reg 3))) ;; 4
+     (iadd (reg 0)  (int 1)) ;; 5
+     (mov (reg 1)  (reg 2)) ;; 6
+     (pop (reg 2)) ;; 7
+     (stop) ;; 8
+     (push (int 2)) ;; 9
+     (ffi 0 1) ;; 10
+     (mov (reg 3) (deref (reg 0) )) ;; 11
+     (mov (deref (reg 3) + 1) (deref (reg 1) + 1)) ;; 12
+     (mov (deref (reg 3)) (int 16)) ;; 13
+     (ret) ;; 14
+     (mov (reg 2) (reg 1) ) ;; 15
+     (mov (reg 1)  (reg 0) ) ;; 16
+     (push (deref (reg 3) - 1)) ;; 17
+     (push (deref (reg 1) + 1)) ;; 18
+     (push (deref (reg 3) - 1)) ;; 19
+     (iadd [deref (reg 1) + 1] [deref (reg 3) + 1]) ;; 20
+     (iadd (reg 0)  (int 1)) ;; 21
+     (mov (reg 3) (deref (reg 0) )) ;; 22
+     (iadd (reg 0)  (int 1)) ;; 23
+     (ret))))) ;; 24
+
+
+
