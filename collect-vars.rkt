@@ -11,6 +11,9 @@
 (provide collect-vars)
 
 (define (collect-vars code)
+  (collect-vars-expr (list (list-rest 'lambda '() code))))
+ 
+(define (collect-vars-p code)
   (for/list ([expr code])
     (collect-vars-expr expr)))
 
@@ -20,7 +23,7 @@
      (list-rest
       'let
       (build-assoc names (map collect-vars-expr values))
-      (collect-vars body))]
+      (collect-vars-p body))]
     [(list 'begin body ...)
      (cons
       'begin
@@ -33,9 +36,9 @@
         (car vars)
         (set-subtract (cdr vars) args)
         args
-        (collect-vars body)))]
+        (collect-vars-p body)))]
     [(list expr args ...)
-     (collect-vars (cons expr args))]
+     (collect-vars-p (cons expr args))]
     [other other]))
 
 (define (find-vars code boundvars)
@@ -66,6 +69,7 @@
      (find-vars body (set-union boundvars args))]
     [(list _ args ...)
      (find-vars expr boundvars)]
+    [(or '+ '-) (cons '() boundvars)]
     [(? symbol?)
      (cons
       (if (member expr boundvars)

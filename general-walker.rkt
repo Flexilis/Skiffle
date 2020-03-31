@@ -6,9 +6,9 @@
   (for/list ([x l1] [y l2])
     (cons x y)))
 
-(define (build-assoc l1 l2)
-  (for/list ([x l1] [y l2])
-    (list x y)))
+(define (build-assoc . lists)
+  (for/list ([i (in-range (length (car lists)))])
+    (apply list (map (λ (x) (list-ref x i)) lists))))
 
 (define (list-rest arg1 . args)
   (match args
@@ -27,10 +27,6 @@
 
 (define (apply-to-subexprs fn expr)
   (match expr
-    [(list expr args ...)
-     (cons
-      (apply-to-expr fn expr)
-      (map (λ (e) (apply-to-expr fn e)) args))]
     [(list 'let (list (list names values) ...) body ...)
      (list-rest
       'let
@@ -47,4 +43,8 @@
       'lambda
       args
       (map (λ (e) (apply-to-expr fn e)) body))]
+    [(list expr args ...)
+     (cons
+      (apply-to-expr fn expr)
+      (map (λ (e) (apply-to-expr fn e)) args))]
     [other other]))

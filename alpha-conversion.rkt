@@ -47,7 +47,7 @@
         'lambda
         (map (λ (e) (lookup-in-scope e new-scope)) names)
         (alpha-convert-block body (cons new-scope scopes))))]
-    [(list 'let (list (list names values) ...) body ...)
+    [(list 'let (list (list names values) ...) body ..1)
      (let* ([new-names (map (λ e (gen-name)) names)]
             [new-scope (merge-lists names new-names)]
             [new-values (map (λ (e) (alpha-convert-expr e scopes)) values)]
