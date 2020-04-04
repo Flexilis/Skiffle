@@ -40,7 +40,13 @@
                      [value values]
                      #:unless (hash-ref constexpr-vars name #f))
             (list name value))
-          body)]
+          (map eval-constexprs-expr body))]
+        [(list 'lambda (list names ...) body ..1)
+         (list-rest
+          'lambda
+          names
+          (for/list ([expr body])
+            (eval-constexprs-expr expr)))]
         [else (apply-to-subexprs eval-constexprs-expr expr)])))
 
 (define (all l)

@@ -23,9 +23,9 @@
     [(? symbol?)
      (let ([val (hash-ref vars expr #f)])
        (if val val expr))]
-    [(list 'begin (list exprs ...))
+    [(list 'begin exprs ...)
      (elim-single-use-vars exprs)]
-    [(list 'lambda (list names ...) body ...)
+    [(list 'lambda (list names ...) body ..1)
      (list-rest
       'lambda
       names
@@ -39,7 +39,7 @@
      (if elim-let
          (if ((length body) . > . 1)
              (list-rest 'begin (elim-single-use-vars body))
-             (elim-single-use-vars (car body)))
+             (car (elim-single-use-vars body)))
          (list-rest
           'let
           (for/list ([name names]

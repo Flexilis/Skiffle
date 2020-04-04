@@ -28,7 +28,7 @@
     [(list 'lambda (list var ...) (list boundvar ...) (list args ...) body ...)
      (let* ([var-offsets (assign-offsets var)]
             [boundvar-offsets (assign-offsets boundvar (add1 (length var)))]
-            [arg-offsets (assign-offsets args (- 0 (length args) 1))])
+            [arg-offsets (assign-offsets args (- (length args)))])
        (list-rest
         'lambda
         var-offsets

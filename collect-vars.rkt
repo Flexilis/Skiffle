@@ -47,9 +47,9 @@
                code)])
     (cons
      (apply set-union
-       (map car vars))
+       (cons '() (map car vars)))
      (apply set-union
-       (map cdr vars)))))
+       (cons '() (map cdr vars))))))
 
 (define (find-vars-expr expr boundvars)
   (match expr
@@ -66,7 +66,9 @@
     [(list 'begin body)
      (find-vars body boundvars)]
     [(list 'lambda (list args ...) body ...)
-     (find-vars body (set-union boundvars args))]
+     (cons
+      (car (find-vars body (set-union boundvars args)))
+      boundvars)]
     [(list _ args ...)
      (find-vars expr boundvars)]
     [(or '+ '-) (cons '() boundvars)]
