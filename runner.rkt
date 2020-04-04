@@ -8,7 +8,7 @@
          "unify-freevars.rkt"
          "label-replacement.rkt"
          "find-labels.rkt"
-         "compile.rkt"
+         "compile-expr.rkt"
          "interp.rkt"
          )
 
@@ -23,14 +23,15 @@
 
 (time
  (run
-  '((+ 1 2))
+  '((+ ((lambda () 1)) 2))
   (list alpha-convert
-        eval-constexprs
+        ;eval-constexprs
         elim-single-use-vars
         collect-vars
         find-var-offsets
         unify-freevars
-        compile
+        print-id
+        compile-all
         print-id
         find-labels
         replace-labels

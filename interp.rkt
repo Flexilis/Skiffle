@@ -66,6 +66,7 @@
           (print-stack (vector-ref registers 0) memory)
           registers)
         (begin
+          (println (vector-ref opcodes ip))
           (set! ip (add1 ip))
           (match (vector-ref opcodes (sub1 ip))
             [(list 'debug)
@@ -120,6 +121,16 @@
              (set-addr op1
                        (bitwise-and (get-addr op1 mem)
                                     (get-addr op2 mem))
+                       mem)]
+            [(list 'iior op1 op2)
+             (set-addr op1
+                       (bitwise-ior (get-addr op1 mem)
+                                    (get-addr op2 mem))
+                       mem)]
+            [(list 'xor op1 op2 op3)
+             (set-addr op1
+                       (bitwise-xor (get-addr op2 mem)
+                                    (get-addr op3 mem))
                        mem)]
             [(list 'isub op1 op2)
              (set-addr op1

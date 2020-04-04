@@ -1,6 +1,6 @@
 #lang racket
 
-(provide compile)
+(provide compile-all)
 
 (define gen-label
   (let ([labels 0])
@@ -21,7 +21,7 @@
       (push ,PROC-IND)
       ,lbl2)))
 
-(define (compile code)
+(define (compile-all code)
   (match code
     [(list (list 'lambda '() boundvars '() body ...))
      `((mov ,%FRAME ,%STACK)
@@ -52,14 +52,18 @@
 
 (define INT-UNMASK (list 'int (bitwise-not (expt 2 63))))
 
-(define (untag-int loc [error '((mov (reg 9) -1) (stop))])
+(define (untag-int loc [err-path '((mov (reg 8) (int -1)) (stop))])
   (let ([lbl (gen-label)])
     `((and (reg 6) ,loc (int ,(expt 2 63)))
-      (cmp (reg 6) (int 1))
+      (debug)
+      (cmp (reg 6) (int ,(expt 2 63)))
       (je ,lbl)
-      ,@error
+      ,@err-path
       ,lbl
       (iand ,loc ,INT-UNMASK))))
+
+(define (tag-int loc)
+  `((iior ,loc (int ,(expt 2 63)))))
 
 (define (emit-fn-maker freevars args label)
   (match freevars
@@ -101,9 +105,10 @@
       (println lop)
       `(,@(compile-expr lop state)
         ,@(compile-expr rop state)
-        ,@(untag-int %STACK + 1)
-        ,@(untag-int %STACK)
+        ,@(untag-int `(,%STACK + 1))
+        ,@(untag-int `[,%STACK])
         (,(if (eq? (car expr) '+) 'iadd 'isub) [,%STACK + 1] [,%STACK])
+        ,@(tag-int `[,%STACK + 1])
         (iadd ,%STACK (int 1)))]
      [(list 'let (list (list offsets values) ...) body ...)
       (append (apply append
@@ -122,12 +127,7 @@
      [(list fn args ...)
       `((push ,%OLDFRAME)
         (push ,%FN)
-        (push (reg 5))
-        (mov (reg 5) ,%STACK)
         ,@(compile-expr fn state)
-        (pop ,%FN)
-        (mov ,%STACK (reg 5))
-        (pop (reg 5))
         ,@(apply append
                  (for/list ([arg args])
                    (compile-expr arg state)))

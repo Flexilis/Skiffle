@@ -29,6 +29,8 @@
   (~a ln "\t"
       (match instr
         [(list ': label) (~a ":" label)]
+        [(list 'iior op1 op2) (~a "iior " (op->str op1) #\space (op->str op2))]
+        [(list 'xor op1 op2 op3) (~a "xor " (op->str op1) #\space (op->str op2) #\space (op->str op3))]
         [(list 'iand op1 op2) (~a "iand " (op->str op1) #\space (op->str op2))]
         [(list 'and op1 op2 op3)
          (~a "and " (op->str op1) #\space (op->str op2) #\space (op->str op3))]

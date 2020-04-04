@@ -15,6 +15,8 @@
 (define (convert-instr instr labels)
   (match instr
     [(list 'com str) '(nop)]
+    [(list 'iior op1 op2) (list 'iior (convert-op op1 labels) (convert-op op2 labels))]
+    [(list 'xor op1 op2 op3) (list 'xor (convert-op op1 labels) (convert-op op2 labels) (convert-op op3 labels))]
     [(list 'and op1 op2 op3) (list 'and (convert-op op1 labels) (convert-op op2 labels) (convert-op op3 labels))]
     [(list 'debug) instr]
     [(list 'debug op) (list 'debug (convert-op op labels))]
