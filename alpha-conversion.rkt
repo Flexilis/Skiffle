@@ -40,6 +40,11 @@
     [(? symbol?) (lookup expr scopes)]
     [(list 'begin (list exprs ...))
      (alpha-convert-block exprs scopes)]
+    [(list 'if cond if-branch else-branch)
+     (list 'if
+           (alpha-convert-expr cond scopes)
+           (alpha-convert-expr if-branch scopes)
+           (alpha-convert-expr else-branch scopes))]
     [(list 'lambda (list names ...) body ...)
      (let* ([new-names (map (λ e (gen-name)) names)]
             [new-scope (merge-lists names new-names)])

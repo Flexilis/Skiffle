@@ -11,13 +11,16 @@
 
 (define (lit-eval expr)
   (match expr
+    [(list 'if cond if-branch else-branch)
+     (if (eq? (lit-eval cond) 'null) (lit-eval else-branch) (lit-eval if-branch))]
     [(? symbol?)
      (lit-eval (hash-ref constexpr-vars expr))]
     [(list op lop rop)
      ((match op ['+ +] ['- -]) (lit-eval lop) (lit-eval rop))]
     [(list 'let _ body ..1)
      (lit-eval (last body))]
-    [(? number?) expr]))
+    [(? number?) expr]
+    [(quote 'null) 'null]))
     
 (define (eval-constexprs-expr expr)
   (if (constexpr? expr)
@@ -25,6 +28,7 @@
        (match expr
          [(? symbol?)
           expr]
+         [(list 'if _ _ _) expr]
          [(list 'begin body ...)
           (last body)]
          [(list 'let (list (list names values) ...) body ..1)
@@ -75,10 +79,13 @@
      (all (map constexpr? body))]
     [(list 'lambda (list names ...) body ...)
      #f]
+    [(list 'if _ _ _)
+     (all (map constexpr? (cdr expr)))]
     [(list 'let (list (list names values) ...) body ..1)
      (all (map constexpr? body))]
     [(list (or '+ '-) lop rop)
      (and (constexpr? lop) (constexpr? rop))]
+    [(list quote exp) #t]
     [(list expr1 args ...)
      #f]
     [other #t]))

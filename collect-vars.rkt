@@ -37,6 +37,11 @@
         (set-subtract (cdr vars) args)
         args
         (collect-vars-p body)))]
+    [(list 'if cond if-branch else-branch)
+     (list 'if
+           (collect-vars-expr cond)
+           (collect-vars-expr if-branch)
+           (collect-vars-expr else-branch))]
     [(list expr args ...)
      (collect-vars-p (cons expr args))]
     [other other]))
@@ -69,6 +74,7 @@
      (cons
       (car (find-vars body (set-union boundvars args)))
       boundvars)]
+    [(list 'if body ..3) (find-vars body boundvars)]
     [(list _ args ...)
      (find-vars expr boundvars)]
     [(or '+ '-) (cons '() boundvars)]

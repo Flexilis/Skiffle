@@ -16,6 +16,11 @@
 
 (define (find-var-offsets-expr expr)
   (match expr
+    [(list 'if cond if-branch else-branch)
+     (list 'if
+           (find-var-offsets-expr cond)
+           (find-var-offsets-expr if-branch)
+           (find-var-offsets-expr else-branch))]
     [(list 'let (list (list names values) ...) body ...)
      (list-rest
       'let
@@ -80,6 +85,11 @@
       (replace-var offsets body))]
     [(list 'lambda _ _ _ _ ...) ;; each lambda has it's own var binding
      expr]
+    [(list 'if cond if-branch else-branch)
+     (list 'if
+           (replace-var-expr offsets cond)
+           (replace-var-expr offsets if-branch)
+           (replace-var-expr offsets else-branch))]
     [(list expr args ...)
      (map (λ (x) (replace-var-expr offsets x)) (cons expr args))]
     [(? symbol?)

@@ -19,6 +19,11 @@
 
 (define (unify-freevars-expr expr)
   (match expr
+    [(list 'if cond if-branch else-branch)
+     (list 'if
+           (unify-freevars-expr cond)
+           (unify-freevars-expr if-branch)
+           (unify-freevars-expr else-branch))]
     [(list 'let (list (list (cons names offsets) values) ...) body ...)
      (for ([name names] [offset offsets])
        (hash-set! vars name offset))

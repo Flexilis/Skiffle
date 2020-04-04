@@ -65,6 +65,8 @@
 (define (tag-int loc)
   `((iior ,loc (int ,(expt 2 63)))))
 
+(define NULL-INTERNED (expt 2 62))
+
 (define (emit-fn-maker freevars args label)
   (match freevars
     [(list (list local-offsets global-offsets) ...)
@@ -101,8 +103,18 @@
    (match expr
      [(? number?) `((push (int ,(tag-as-int expr))))]
      [(list 'var offset) `((push [,%FRAME + ,offset]))]
+     [(list 'if cond if-branch else-branch)
+      (let ([lbl1 (gen-label)]
+            [lbl2 (gen-label)])
+        `(,@(compile-expr cond state)
+          (cmp [,%STACK] (int ,NULL-INTERNED))
+          (je ,lbl1)
+          ,@(compile-expr if-branch state)
+          (jmp ,lbl2)
+          ,lbl1
+          ,@(compile-expr else-branch state)
+          ,lbl2))]
      [(list (or '+ '-) lop rop)
-      (println lop)
       `(,@(compile-expr lop state)
         ,@(compile-expr rop state)
         ,@(untag-int `(,%STACK + 1))

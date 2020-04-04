@@ -30,6 +30,11 @@
       'lambda
       names
       (elim-single-use-vars body))]
+    [(list 'if cond if-branch else-branch)
+     (list 'if
+           (elim-single-use-vars-expr cond)
+           (elim-single-use-vars-expr if-branch)
+           (elim-single-use-vars-expr else-branch))]
     [(list 'let (list (list names values) ...) body ..1)
      (define elim-let #t)
      (for ([name names] [value values])

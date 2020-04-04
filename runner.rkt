@@ -15,7 +15,7 @@
 (define (run code passes)
   (if (null? passes) 
       code
-      (run ((car passes) code) (cdr passes))))
+      (run (begin (println (car passes)) ((car passes) code)) (cdr passes))))
 
 (define (print-id x) (println x) x)
 
@@ -23,16 +23,14 @@
 
 (time
  (run
-  '((+ ((lambda () 1)) 2))
+  '((if 3 2 1))
   (list alpha-convert
         ;eval-constexprs
         elim-single-use-vars
         collect-vars
         find-var-offsets
         unify-freevars
-        print-id
         compile-all
-        print-id
         find-labels
         replace-labels
         interp
